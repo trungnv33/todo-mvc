@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TodoForm from './Todo/TodoForm';
 import TodoList from './TodoList/TodoList';
 import Filters from './Filters/Filters';
@@ -10,9 +10,31 @@ interface Todo {
   completed: boolean;
 }
 
+const LOCAL_STORAGE_KEY = 'todos'; // Key to store todos in localStorage
+const getInitialTodosFromLocalStorage = () => {
+  const storedTodos = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (storedTodos) {
+    return (JSON.parse(storedTodos)); // Load todos if available
+  }
+  return [];
+}
+
 const App: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const [todos, setTodos] = useState<Todo[]>(getInitialTodosFromLocalStorage());
   const [filter, setFilter] = useState<string>('all');
+  const firstRender = useRef(true);
+
+  // Save todos to localStorage whenever todos change
+  useEffect(() => {
+    if (!firstRender.current) {
+      console.log("Saving data to localStorage:", todos);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos));
+    };
+    return () => {
+      firstRender.current = false;
+    }
+  }, [todos]);
 
   const addTodo = (text: string) => {
     const newTodo: Todo = {
@@ -32,7 +54,10 @@ const App: React.FC = () => {
   };
 
   const clearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed));
+    const completedTodos = todos.filter(todo => todo.completed);
+    if (completedTodos.length > 0) {
+      setTodos(todos.filter(todo => !todo.completed));
+    }
   };
   
   const toggleAllTodos = () => {
@@ -40,11 +65,19 @@ const App: React.FC = () => {
     setTodos(todos.map(todo => ({ ...todo, completed: !areAllCompleted })));
   };
 
+  const editTodo = (id: number, newText: string) => {
+    setTodos(todos.map(todo => 
+      todo.id === id ? { ...todo, text: newText } : todo
+    ));
+  };
+
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
     return true;
   });
+
+  const activeTodosLeft = todos.filter((todo) => !todo.completed).length;
 
   return (
     <div>
@@ -58,8 +91,11 @@ const App: React.FC = () => {
           )}
           <TodoForm addTodo={addTodo} />
         </div>
-        <TodoList todos={filteredTodos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
-        <Filters filter={filter} setFilter={setFilter} clearCompleted={clearCompleted} />
+        <TodoList todos={filteredTodos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} editTodo={editTodo} />
+        <div className='footer'>
+          <span className="todo-count">{activeTodosLeft} items left!</span>
+          <Filters filter={filter} setFilter={setFilter} clearCompleted={clearCompleted} />
+        </div>
       </div>
     </div>
   );

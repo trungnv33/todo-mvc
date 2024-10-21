@@ -6,9 +6,10 @@ interface TodoListProps {
   todos: Todo[];
   toggleTodo: (id: number) => void;
   deleteTodo: (id: number) => void;
+  editTodo: (id: number, text: string) => void;
 }
 
-const TodoList: React.FC<TodoListProps> = ({ todos, toggleTodo, deleteTodo }) => {
+const TodoList: React.FC<TodoListProps> = ({ todos, toggleTodo, deleteTodo, editTodo }) => {
   return (
     <ul>
       {todos.map(todo => (
@@ -17,6 +18,7 @@ const TodoList: React.FC<TodoListProps> = ({ todos, toggleTodo, deleteTodo }) =>
           todo={todo}
           toggleTodo={toggleTodo}
           deleteTodo={deleteTodo}
+          editTodo={editTodo}
         />
       ))}
     </ul>
